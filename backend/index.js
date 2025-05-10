@@ -5,7 +5,6 @@ import { exec } from 'child_process';
 import bodyParser from 'body-parser';
 import { fileURLToPath } from 'url';
 
-
 // Inicialització d'Express
 const app = express();
 const PORT = 3000;
@@ -31,18 +30,18 @@ app.post('/enviar-matricula', async (req, res) => {
     try {
         // 1. Recollir les dades del formulari
         const dadesMatricula = req.body;
-
+        console.log('Dades matricula:', dadesMatricula);
         // 2. Generar XML amb les dades
-        const xmlPath = path.join(__dirname, 'uploads', 'matricula.xml');
+        const xmlPath = path.join(__dirname, '..', 'uploads', 'matricula.xml');
         const xmlContent = generarXML(dadesMatricula);
         fs.writeFileSync(xmlPath, xmlContent);
 
         // 3. Aplicar transformació XSLT → XSL-FO
-        const foPath = path.join(__dirname, 'uploads', 'matricula.fo');
+        const foPath = path.join(__dirname,'..', 'uploads', 'matricula.fo');
         await transformarXSLT(xmlPath, foPath);
 
         // 4. Generar PDF a partir del XSL-FO
-        const pdfPath = path.join(__dirname, 'uploads', 'matricula.pdf');
+        const pdfPath = path.join(__dirname,'..' ,'uploads', 'matricula.pdf');
         await generarPDF(foPath, pdfPath);
 
         // 5. Enviar PDF com a resposta
@@ -55,32 +54,34 @@ app.post('/enviar-matricula', async (req, res) => {
 });
 
 // Funció auxiliar per a generar l'XML
-function generarXML(dades) {
-    /*
-    TO-DO:
 
-    Amb les dades rebudes, generem un XML, amb el format corresponent (veieu exemple)
-    */
-    return `
-<matricula>
-  ...
-</matricula>
-    `;
-}
+    function generarXML(dades) {
+        const { nom,cognoms,dni,adreca, telefon,email,cicle,curs,moduls } = dades;
 
-// Funció auxiliar per aplicar l'XSLT
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    <matricula>
+      <alumne>
+        <nom>${nom}</nom>
+        <dni>${dni}</dni>
+        <cognoms>${cognoms}</cognoms>
+        <email>${email}</email>
+        <adreca>${adreca}</adreca>
+        <telefon>${telefon}</telefon>
+      </alumne>
+      <cicle>${cicle}</cicle>
+      <curs>${curs}</curs>
+      <moduls>
+        ${moduls.map(modul => `<modul>${modul}</modul>`).join('\n    ')}
+      </moduls>
+    </matricula>`;
+        return xml;
+    }
+
+
 function transformarXSLT(xmlPath, foPath) {
     return new Promise((resolve, reject) => {
-        /*
-        TO-DO:
-
-        Crea l'ordre xsltproc per convertir l'xml definit en xmlPath en un XML en format
-        XSL-FO en foPath. 
-
-        La plantilla la guardareu en ./xslt/matricula.xsl
-
-        */
-        const cmd = ``;
+        const xsltPath = path.join(__dirname, 'xslt', 'matricula.xsl');
+        const cmd = `xsltproc -o "${foPath}" "${xsltPath}" "${xmlPath}"`;
 
         exec(cmd, (error, stdout, stderr) => {
             if (error) {

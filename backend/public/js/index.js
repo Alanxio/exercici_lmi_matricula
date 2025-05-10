@@ -74,7 +74,18 @@ function actualitzarModuls() {
 
     
     */
-
+   
+    moduls[cicle][curs].forEach(modul => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'moduls';
+        checkbox.value = modul;
+        checkbox.checked = true; 
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${modul}`));
+        modulsFieldset.querySelector('.llistaModuls').appendChild(label);
+    });
 }
 
 // Escoltem canvis en la selecció de cicle/curs
@@ -94,7 +105,45 @@ form.addEventListener('submit', async (e) => {
     // Per agafar les propietats des d'aquesta interfície fem ús de form.get('nom_del_camp_del_formulari')
 
     const formData = new FormData(form);
+    const jsonData = {
+        nom: formData.get('nom'),
+        cognoms: formData.get('cognoms'),
+        dni: formData.get('dni'),
+        adreca: formData.get('adreca'),
+        telefon: formData.get('telefon'),
+        email: formData.get('email'),
+        cicle: formData.get('cicle'),
+        curs: formData.get('curs'),
+        moduls: formData.getAll('moduls') 
+    };
+    try {
+        const response = await fetch('/enviar-matricula', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(jsonData)
+        });
 
+        if (!response.ok) {
+            throw new Error('Error en enviar les dades al servidor');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'matricula.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Hi ha hagut un problema en enviar el formulari.');
+    }
     /* TO-DO
     
     Prepara un objece JSON amb la informació guardada al formulari
